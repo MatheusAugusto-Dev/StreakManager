@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Nova Meta</h2>
+
+<form method="POST" class="goal-form">
+
+    <label>
+        Nome da meta
+        <input type="text" name="title" required>
+    </label>
+
+    <label>
+        Categoria
+        <input type="text" name="category" placeholder="Estudo, Treino, Saúde...">
+    </label>
+
+    <label>
+        Frequência da meta
+        <select name="frequency_type" id="frequency_type" required>
+            <option value="daily">Todos os dias</option>
+            <option value="custom">Ciclo personalizado (ex: academia)</option>
+        </select>
+    </label>
+
+    <div id="start_date_wrapper" style="display: none;">
+        <label>
+            Data inicial do ciclo
+            <input type="date" name="start_date">
+        </label>
+        <small>
+            Ex: primeiro dia de treino da academia
+        </small>
+    </div>
+
+    <label>
+        Minutos mínimos (opcional)
+        <input type="number" name="min_minutes" min="0">
+    </label>
+
+    <label>
+        Tipo de meta
+        <select name="metric_type" id="metric_type" required>
+            <option value="time">⏱️ Tempo (minutos)</option>
+            <option value="pages">📄 Páginas</option>
+            <option value="chapters">📚 Capítulos</option>
+        </select>
+    </label>
+
+    <label id="target_label">
+        Valor mínimo por dia
+        <input type="number" name="target_value" min="0" required>
+    </label>
+
+    <label>
+        Cor
+        <input type="color" name="color" value="#4CAF50">
+    </label>
+    
+
+    <button type="submit">Criar Meta</button>
+</form>
+
+<script>
+    const frequencySelect = document.getElementById("frequency_type");
+    const startDateWrapper = document.getElementById("start_date_wrapper");
+
+    function toggleStartDate() {
+        if (frequencySelect.value === "custom") {
+            startDateWrapper.style.display = "block";
+        } else {
+            startDateWrapper.style.display = "none";
+        }
+    }
+
+    frequencySelect.addEventListener("change", toggleStartDate);
+    toggleStartDate();
+
+    const metricSelect = document.getElementById("metric_type");
+    const targetLabel = document.getElementById("target_label");
+
+    function updateLabel() {
+        const labels = {
+            time: "Minutos mínimos por dia",
+            pages: "Páginas mínimas por dia",
+            chapters: "Capítulos mínimos por dia"
+        };
+
+        targetLabel.querySelector("label")?.remove();
+        targetLabel.firstChild.textContent = labels[metricSelect.value];
+    }
+
+    metricSelect.addEventListener("change", updateLabel);
+    updateLabel();
+</script>
+
+{% endblock %}

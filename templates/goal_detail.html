@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{ goal.title }}</h2>
+
+<div class="calendar">
+    {% for day in calendar_days %}
+        <div class="calendar-day
+            {% if day.done %}done{% else %}missed{% endif %}
+            {% if day.is_today %}today{% endif %}">
+            {{ day.day }}
+        </div>
+    {% endfor %}
+</div>
+
+<a class="btn"
+   href="{{ url_for('checkin', goal_id=goal.id) }}">
+   Fazer / Editar Check-in
+</a>
+{% endblock %}

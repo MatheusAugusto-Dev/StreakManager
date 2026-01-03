@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    {% for goal in goals %}
+    <div class="goal-card {% if goal.done_today %}done{% else %}pending{% endif %}"
+        style="border-left: 6px solid {{ goal.color }}">
+
+        <div class="streak">
+            🔥 {{ goal.streak }}
+        </div>
+
+        <h2>
+            <a href="{{ url_for('goal_detail', goal_id=goal.id) }}">
+                {{ goal.title }}
+            </a>
+        </h2>
+
+        <p class="category">{{ goal.category }}</p>
+
+        {% if goal.frequency_type == "custom" %}
+            <p class="rule">📆 Frequência personalizada</p>
+        {% else %}
+            <p class="rule">📅 Todos os dias</p>
+        {% endif %}
+
+       <p class="rule">
+            Meta diária:
+            {{ goal.target_value }}
+
+            {% if goal.metric_type == "time" %}
+                min ⏱️
+            {% elif goal.metric_type == "pages" %}
+                páginas 📄
+            {% elif goal.metric_type == "chapters" %}
+                capítulos 📚
+            {% endif %}
+        </p>
+
+        {% if goal.done_today %}
+            <p class="status done">✅ Feito hoje</p>
+        {% else %}
+            <p class="status pending">❌ Não feito hoje</p>
+        {% endif %}
+
+        <a class="btn"
+        href="{{ url_for('checkin', goal_id=goal.id) }}">
+        {% if goal.done_today %}
+            Editar Check-in
+        {% else %}
+            Fazer Check-in
+        {% endif %}
+        </a>
+
+        <form method="POST"
+            action="{{ url_for('delete_goal', goal_id=goal.id) }}"
+            onsubmit="return confirm('Tem certeza que deseja remover esta meta?');">
+            <button class="btn danger">Remover Meta</button>
+        </form>
+
+    </div>
+
+    {% endfor %}
+</div>
+{% endblock %}
