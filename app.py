@@ -25,17 +25,13 @@ def dashboard():
             "category": goal.category,
             "color": goal.color,
 
-            # 🔥 NOVO MODELO DE MÉTRICA
             "metric_type": goal.metric_type,
             "target_value": goal.target_value,
 
-            # 🔁 Frequência
             "frequency_type": goal.frequency_type,
+            "weekly_target": goal.weekly_target, 
 
-            # 🔥 Streak
             "streak": current_streak(goal),
-
-            # ✅ Status diário
             "done_today": done_today(goal.id),
         })
 
@@ -47,6 +43,10 @@ def new_goal():
         frequency_type = request.form["frequency_type"]
 
         start_date = None
+        weekly_target = None
+        if frequency_type == "weekly":
+            weekly_target = int(request.form["weekly_target"])
+
         if frequency_type == "custom":
             start_date_str = request.form.get("start_date")
             if start_date_str:
@@ -59,7 +59,8 @@ def new_goal():
             metric_type=request.form["metric_type"],
             target_value=int(request.form["target_value"]),
             frequency_type=frequency_type,
-            start_date=start_date
+            start_date=start_date,
+            weekly_target=weekly_target
         )
 
         db.session.add(goal)

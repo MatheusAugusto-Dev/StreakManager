@@ -33,6 +33,8 @@ class Goal(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.Date, default=date.today)
 
+    weekly_target = db.Column(db.Integer, nullable=True)
+
     checkins = db.relationship(
         "Checkin",
         backref="goal",

@@ -18,11 +18,18 @@
 
         <p class="category">{{ goal.category }}</p>
 
-        {% if goal.frequency_type == "custom" %}
-            <p class="rule">📆 Frequência personalizada</p>
-        {% else %}
+        {% if goal.frequency_type == "daily" %}
             <p class="rule">📅 Todos os dias</p>
+
+        {% elif goal.frequency_type == "weekly" %}
+            <p class="rule">
+                📆 {{ goal.weekly_target }}x por semana
+            </p>
+
+        {% elif goal.frequency_type == "custom" %}
+            <p class="rule">🔁 Ciclo personalizado</p>
         {% endif %}
+
 
        <p class="rule">
             Meta diária:

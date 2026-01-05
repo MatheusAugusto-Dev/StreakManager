@@ -17,11 +17,20 @@
 
     <label>
         Frequência da meta
-        <select name="frequency_type" id="frequency_type" required>
+        <select name="frequency_type" id="frequency_type">
             <option value="daily">Todos os dias</option>
-            <option value="custom">Ciclo personalizado (ex: academia)</option>
+            <option value="weekly">X vezes por semana</option>
+            <option value="custom">Ciclo personalizado (academia)</option>
         </select>
     </label>
+
+    <div id="weekly_target_wrapper" style="display:none;">
+        <label>
+            Quantas vezes por semana
+            <input type="number" name="weekly_target" min="1">
+        </label>
+    </div>
+
 
     <div id="start_date_wrapper" style="display: none;">
         <label>
@@ -92,6 +101,14 @@
 
     metricSelect.addEventListener("change", updateLabel);
     updateLabel();
+
+    function toggleFrequencyFields() {
+    const freq = document.getElementById("frequency_type").value;
+    document.getElementById("weekly_target_wrapper").style.display =
+        freq === "weekly" ? "block" : "none";
+    }
+    document.getElementById("frequency_type").addEventListener("change", toggleFrequencyFields);
+    toggleFrequencyFields();
 </script>
 
 {% endblock %}

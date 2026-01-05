@@ -11,7 +11,8 @@ def has_valid_checkin(goal_id, target_date):
 
 
 def current_streak(goal):
-    from datetime import date, timedelta
+    if goal.frequency_type == "weekly":
+        return weekly_streak(goal)
 
     today = date.today()
     streak = 0
@@ -75,3 +76,31 @@ def is_expected_day(goal, target_date):
         return cycle_day in (0, 1)
 
     return True
+
+def week_key(d: date):
+    return d.isocalendar().year, d.isocalendar().week
+
+def weekly_progress(goal, target_date):
+    year, week = week_key(target_date)
+
+    return Checkin.query.filter(
+        Checkin.goal_id == goal.id,
+        Checkin.date >= date.fromisocalendar(year, week, 1),
+        Checkin.date <= date.fromisocalendar(year, week, 7)
+    ).count()
+
+def weekly_streak(goal):
+    today = date.today()
+    streak = 0
+    cursor = today
+
+    while True:
+        count = weekly_progress(goal, cursor)
+
+        if count >= goal.weekly_target:
+            streak += 1
+            cursor -= timedelta(days=7)
+        else:
+            break
+
+    return streak
