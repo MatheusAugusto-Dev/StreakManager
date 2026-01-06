@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="report-actions">
+  <a class="btn secondary" href="{{ url_for('report_weekly_preview') }}" target="_blank">
+    Prévia Relatório Semanal
+  </a>
+
+  <form method="POST" action="{{ url_for('report_weekly_send') }}" style="display:inline;">
+    <button type="submit" class="btn">
+      Enviar Relatório Semanal (teste)
+    </button>
+  </form>
+</div>
+
 <div class="dashboard">
     {% for goal in goals %}
     <div class="goal-card {% if goal.done_today %}done{% else %}pending{% endif %}"

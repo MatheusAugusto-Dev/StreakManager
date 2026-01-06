@@ -1,0 +1,19 @@
+<h2>📊 Relatório Semanal — {{ period }}</h2>
+
+<p>{{ summary_text }}</p>
+
+{% for goal in goals %}
+<div style="border:1px solid #eee; padding:12px; margin-bottom:10px;">
+    <h3>{{ goal.title }}</h3>
+
+    <p>
+        Total: <strong>{{ goal.total }}</strong>
+        {% if goal.metric_type == "time" %}min{% endif %}
+        {% if goal.metric_type == "pages" %}páginas{% endif %}
+        {% if goal.metric_type == "chapters" %}capítulos{% endif %}
+    </p>
+
+    <p>Consistência: {{ goal.completion_rate }}%</p>
+    <p>Status: {{ goal.status }}</p>
+</div>
+{% endfor %}

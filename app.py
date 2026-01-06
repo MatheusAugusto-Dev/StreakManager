@@ -1,10 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for
+import os
+from flask import Flask, Response, render_template, request, redirect, url_for
 from config import Config
 from models import db, Goal, Checkin
 from datetime import date, datetime
 from services import current_streak, done_today, current_streak, is_expected_day, monthly_calendar
 from flask_migrate import Migrate
 
+from stats.report_builder import build_weekly_report_html
+from stats.email_service import send_email
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -138,6 +141,30 @@ def delete_goal(goal_id):
     db.session.commit()
     return redirect(url_for("dashboard"))
 
+@app.route("/reports/weekly/preview")
+def report_weekly_preview():
+    # Gera HTML completo do relatório
+    html = build_weekly_report_html()
+
+    # Mostra no navegador como página HTML
+    return Response(html, mimetype="text/html")
+
+@app.route("/reports/weekly/send", methods=["POST"])
+def report_weekly_send():
+    to_email = os.getenv("REPORT_TO_EMAIL")
+    if not to_email:
+        return "❌ REPORT_TO_EMAIL não definido no .env", 400
+
+    subject = "📊 Relatório Semanal — Streak Manager"
+    html = build_weekly_report_html()
+
+    send_email(
+        subject=subject,
+        html=html,
+        to_email=to_email
+    )
+
+    return redirect(url_for("dashboard"))
 
 if __name__ == "__main__":
     # with app.app_context():

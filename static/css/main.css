@@ -184,3 +184,19 @@ header a {
     font-size: 13px;
     color: #666;
 }
+
+.report-actions {
+    padding: 0 32px;
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.btn.secondary {
+    background: #444;
+}
+
+.btn.secondary:hover {
+    opacity: 0.9;
+}
