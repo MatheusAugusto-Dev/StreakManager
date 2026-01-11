@@ -15,6 +15,7 @@ app.config.from_object(Config)
 db.init_app(app)
 migrate = Migrate(app, db)
 
+
 @app.route("/")
 def dashboard():
     goals = Goal.query.filter_by(is_active=True).all()
@@ -22,6 +23,15 @@ def dashboard():
     goals_data = []
 
     for goal in goals:
+        today_checkin = Checkin.query.filter_by(goal_id=goal.id,date=date.today()).first()
+
+        status = "pending"
+        if today_checkin:
+            if today_checkin.is_rest_day:
+                status = "rest"
+            else:
+                status = "done"
+                
         goals_data.append({
             "id": goal.id,
             "title": goal.title,
@@ -36,6 +46,10 @@ def dashboard():
 
             "streak": current_streak(goal),
             "done_today": done_today(goal.id),
+            "allowed_weekdays": goal.allowed_weekdays,
+            "today_status": status,
+
+
         })
 
     return render_template("dashboard.html", goals=goals_data)
@@ -45,25 +59,38 @@ def new_goal():
     if request.method == "POST":
         frequency_type = request.form["frequency_type"]
 
-        start_date = None
         weekly_target = None
+        allowed_weekdays = None
+        start_date = None
+
         if frequency_type == "weekly":
-            weekly_target = int(request.form["weekly_target"])
+            weekly_target = int(request.form.get("weekly_target") or 0) or None
+
+        if frequency_type == "weekly_days":
+            values = request.form.getlist("allowed_weekdays")
+            allowed_weekdays = [int(v) for v in values] if values else []
 
         if frequency_type == "custom":
             start_date_str = request.form.get("start_date")
             if start_date_str:
                 start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        
+        sunday_optional = bool(request.form.get("sunday_optional"))
 
         goal = Goal(
             title=request.form["title"],
-            category=request.form["category"],
+            category=request.form.get("category"),
             color=request.form.get("color", "#4CAF50"),
+
             metric_type=request.form["metric_type"],
-            target_value=int(request.form["target_value"]),
+            target_value=int(request.form.get("target_value") or 0),
+
             frequency_type=frequency_type,
+            weekly_target=weekly_target,
+            allowed_weekdays=allowed_weekdays,
             start_date=start_date,
-            weekly_target=weekly_target
+            sunday_optional=sunday_optional,
+
         )
 
         db.session.add(goal)
@@ -72,24 +99,21 @@ def new_goal():
 
     return render_template("goal_form.html")
 
-
 @app.route("/goals/<int:goal_id>/checkin", methods=["GET", "POST"])
 def checkin(goal_id):
     goal = Goal.query.get_or_404(goal_id)
     today = date.today()
 
-    if goal.frequency_type == "custom":
+    # Bloqueia check-in em dias neutros
+    if goal.frequency_type in ("weekly_days", "custom"):
         if not is_expected_day(goal, today):
-            return (
-                "❌ Hoje é um dia de descanso dessa meta. "
-                "Ela não conta nem quebra o streak.",
-                400
-            )
+            # Domingo opcional: não bloqueia
+            if goal.sunday_optional and today.weekday() == 6:
+                pass
+            else:
+                return ("❌ Hoje é dia de descanso dessa meta. " "Ela não conta nem quebra o streak.", 400)
 
-    checkin = Checkin.query.filter_by(
-        goal_id=goal.id,
-        date=today
-    ).first()
+    checkin = Checkin.query.filter_by(goal_id=goal.id, date=today).first()
 
     if request.method == "POST":
         try:
@@ -101,17 +125,10 @@ def checkin(goal_id):
         notes = request.form.get("notes")
 
         if progress_value < goal.target_value:
-            return (
-                f"❌ Progresso mínimo não atingido. "
-                f"Esperado: {goal.target_value}",
-                400
-            )
+            return f"❌ Progresso mínimo não atingido. Esperado: {goal.target_value}", 400
 
         if not checkin:
-            checkin = Checkin(
-                goal_id=goal.id,
-                date=today
-            )
+            checkin = Checkin(goal_id=goal.id, date=today)
             db.session.add(checkin)
 
         checkin.progress_value = progress_value
@@ -121,7 +138,7 @@ def checkin(goal_id):
         db.session.commit()
         return redirect(url_for("dashboard"))
 
-    return render_template("checkin_form.html",goal=goal,checkin=checkin)
+    return render_template("checkin_form.html", goal=goal, checkin=checkin)
 
 @app.route("/goals/<int:goal_id>")
 def goal_detail(goal_id):
@@ -163,6 +180,28 @@ def report_weekly_send():
         html=html,
         to_email=to_email
     )
+
+    return redirect(url_for("dashboard"))
+
+@app.route("/goals/<int:goal_id>/rest", methods=["POST"])
+def rest_goal_today(goal_id):
+    goal = Goal.query.get_or_404(goal_id)
+    today = date.today()
+
+    # Se já existe check-in hoje, não permite descanso
+    existing = Checkin.query.filter_by(goal_id=goal.id, date=today).first()
+    if existing:
+        return redirect(url_for("dashboard"))
+
+    rest = Checkin(
+        goal_id=goal.id,
+        date=today,
+        progress_value=0,
+        is_rest_day=True
+    )
+
+    db.session.add(rest)
+    db.session.commit()
 
     return redirect(url_for("dashboard"))
 

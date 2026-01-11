@@ -200,3 +200,11 @@ header a {
 .btn.secondary:hover {
     opacity: 0.9;
 }
+
+.status.done { color: #2e7d32; }
+.status.rest { color: #f9a825; }
+.status.pending { color: #888; }
+
+.btn.secondary {
+  background: #555;
+}

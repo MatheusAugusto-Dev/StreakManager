@@ -34,14 +34,20 @@
             <p class="rule">📅 Todos os dias</p>
 
         {% elif goal.frequency_type == "weekly" %}
+            <p class="rule">📆 {{ goal.weekly_target }}x por semana</p>
+
+        {% elif goal.frequency_type == "weekly_days" %}
             <p class="rule">
-                📆 {{ goal.weekly_target }}x por semana
+                🗓️ Dias:
+                {% set names = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"] %}
+                {% for d in goal.allowed_weekdays %}
+                {{ names[d] }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
             </p>
 
         {% elif goal.frequency_type == "custom" %}
             <p class="rule">🔁 Ciclo personalizado</p>
         {% endif %}
-
 
        <p class="rule">
             Meta diária:
@@ -56,11 +62,16 @@
             {% endif %}
         </p>
 
-        {% if goal.done_today %}
-            <p class="status done">✅ Feito hoje</p>
-        {% else %}
-            <p class="status pending">❌ Não feito hoje</p>
+        {% if goal.today_status == "done" %}
+            <p class="status done">✅ Concluído</p>
+
+            {% elif goal.today_status == "rest" %}
+            <p class="status rest">🟡 Descanso</p>
+
+            {% else %}
+            <p class="status pending">⚪ Não concluído</p>
         {% endif %}
+
 
         <a class="btn"
         href="{{ url_for('checkin', goal_id=goal.id) }}">
@@ -70,15 +81,75 @@
             Fazer Check-in
         {% endif %}
         </a>
+        <label>
+            Frequência da meta
+            <select name="frequency_type" id="frequency_type" required>
+                <option value="daily">Todos os dias</option>
+                <option value="weekly">X vezes por semana</option>
+                <option value="weekly_days">Dias fixos da semana</option>
+                <option value="custom">Ciclo personalizado</option>
+            </select>
+        </label>
 
-        <form method="POST"
-            action="{{ url_for('delete_goal', goal_id=goal.id) }}"
-            onsubmit="return confirm('Tem certeza que deseja remover esta meta?');">
-            <button class="btn danger">Remover Meta</button>
-        </form>
+        <div id="weekly_target_wrapper" style="display:none; margin-top:10px;">
+            <label>
+                Quantas vezes por semana
+                <input type="number" name="weekly_target" min="1">
+            </label>
+        </div>
 
+        <div id="weekly_days_wrapper" style="display:none; margin-top:10px;">
+            <p style="margin:6px 0;">Quais dias contam?</p>
+            <label><input type="checkbox" name="allowed_weekdays" value="0"> Segunda</label><br>
+            <label><input type="checkbox" name="allowed_weekdays" value="1"> Terça</label><br>
+            <label><input type="checkbox" name="allowed_weekdays" value="2"> Quarta</label><br>
+            <label><input type="checkbox" name="allowed_weekdays" value="3"> Quinta</label><br>
+            <label><input type="checkbox" name="allowed_weekdays" value="4"> Sexta</label><br>
+            <label><input type="checkbox" name="allowed_weekdays" value="5"> Sábado</label><br>
+            <label><input type="checkbox" name="allowed_weekdays" value="6"> Domingo</label>
+        </div>
+
+        <div id="start_date_wrapper" style="display:none; margin-top:10px;">
+            <label>
+                Data inicial do ciclo (custom)
+                <input type="date" name="start_date">
+            </label>
+        </div>
+
+            <form method="POST"
+                action="{{ url_for('delete_goal', goal_id=goal.id) }}"
+                onsubmit="return confirm('Tem certeza que deseja remover esta meta?');">
+                <button class="btn danger">Remover Meta</button>
+            </form>
+                
+        {% if goal.sunday_optional %}
+            <p class="rule">🟡 Domingo opcional</p>
+        {% endif %}
+
+        {% if goal.today_status == "pending" %}
+            <form method="POST" action="{{ url_for('rest_goal_today', goal_id=goal.id) }}">
+                <button class="btn secondary">🟡 Descansar hoje</button>
+            </form>
+        {% endif %}
+        
     </div>
 
     {% endfor %}
 </div>
+
+<script>
+  const freq = document.getElementById("frequency_type");
+  const weeklyTarget = document.getElementById("weekly_target_wrapper");
+  const weeklyDays = document.getElementById("weekly_days_wrapper");
+  const startDate = document.getElementById("start_date_wrapper");
+
+  function toggle() {
+    weeklyTarget.style.display = (freq.value === "weekly") ? "block" : "none";
+    weeklyDays.style.display = (freq.value === "weekly_days") ? "block" : "none";
+    startDate.style.display = (freq.value === "custom") ? "block" : "none";
+  }
+
+  freq.addEventListener("change", toggle);
+  toggle();
+</script>
 {% endblock %}
