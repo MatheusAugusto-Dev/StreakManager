@@ -48,8 +48,6 @@ def dashboard():
             "done_today": done_today(goal.id),
             "allowed_weekdays": goal.allowed_weekdays,
             "today_status": status,
-
-
         })
 
     return render_template("dashboard.html", goals=goals_data)
