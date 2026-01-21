@@ -1,5 +1,6 @@
 import calendar
 from datetime import date, timedelta
+from integrations.hevy.utils import is_valid_checkin
 from models import Checkin
 
 def monthly_calendar(goal_id, year=None, month=None):
@@ -79,38 +80,49 @@ def is_expected_day(goal, d: date) -> bool:
     # daily / weekly flexível
     return True
 
-def weekly_streak(goal) -> int:
-    """
-    Streak por semanas consecutivas bem-sucedidas.
-    Semana bem-sucedida = quantidade de check-ins na semana >= weekly_target
-    """
-    if not goal.weekly_target:
-        return 0
+def weekly_streak(goal):
+    from datetime import date, timedelta
+    from models import Checkin
 
+    today = date.today()
     streak = 0
-    cursor = date.today()
+    week_cursor = week_key(today)
 
     while True:
-        start, end = week_start_end(cursor)
-        count = Checkin.query.filter(
-            Checkin.goal_id == goal.id,
-            Checkin.date >= start,
-            Checkin.date <= end
-        ).count()
+        # todos os checkins válidos da semana
+        checkins = (
+            Checkin.query
+            .filter(Checkin.goal_id == goal.id)
+            .filter(Checkin.is_rest_day == False)
+            .all()
+        )
 
-        if count >= goal.weekly_target:
-            streak += 1
-            cursor -= timedelta(days=7)
-        else:
+        week_map = {}
+        for c in checkins:
+            wk = week_key(c.date)
+            week_map.setdefault(wk, 0)
+            week_map[wk] += 1
+
+        # se a semana atual não tem registros suficientes → quebra
+        if week_map.get(week_cursor, 0) < (goal.weekly_target or 1):
             break
+
+        streak += 1
+
+        # volta uma semana
+        year, week = map(int, week_cursor.replace("W", "-").split("-")[0:2])
+        prev_date = date.fromisocalendar(year, week, 1) - timedelta(days=7)
+        week_cursor = week_key(prev_date)
 
     return streak
 
-def current_streak(goal) -> int:
-    from datetime import date, timedelta
 
+def current_streak(goal):
     if goal.frequency_type == "weekly":
         return weekly_streak(goal)
+
+    from datetime import date, timedelta
+    from models import Checkin
 
     today = date.today()
     streak = 0
@@ -119,18 +131,23 @@ def current_streak(goal) -> int:
     while True:
         checkin = Checkin.query.filter_by(goal_id=goal.id, date=d).first()
 
-        # Descanso manual → neutro
+        # descanso manual
         if checkin and checkin.is_rest_day:
             d -= timedelta(days=1)
             continue
 
-        # Dias neutros automáticos
-        if goal.frequency_type in ("weekly_days", "custom"):
-            if not is_expected_day(goal, d):
+        # dias fixos da semana
+        if goal.frequency_type == "weekly_days":
+            if not goal.allowed_weekdays or d.weekday() not in goal.allowed_weekdays:
                 d -= timedelta(days=1)
                 continue
 
-        # Dia esperado → precisa de check-in
+        # domingo opcional
+        if d.weekday() == 6 and goal.sunday_optional:
+            d -= timedelta(days=1)
+            continue
+
+        # precisa ter check-in válido
         if checkin:
             streak += 1
             d -= timedelta(days=1)
@@ -138,3 +155,95 @@ def current_streak(goal) -> int:
             break
 
     return streak
+
+
+def current_weekly_streak(goal) -> int:
+    from datetime import date, timedelta
+
+    today = date.today()
+    streak = 0
+
+    # começamos pela semana atual
+    week_start = today - timedelta(days=today.weekday())
+
+    while True:
+        week_end = week_start + timedelta(days=6)
+
+        # houve execução válida nesta semana?
+        checkins = Checkin.query.filter(
+            Checkin.goal_id == goal.id,
+            Checkin.date >= week_start,
+            Checkin.date <= week_end,
+            Checkin.is_rest_day == False
+        ).all()
+
+        if checkins:
+            streak += 1
+            week_start -= timedelta(days=7)
+        else:
+            break
+
+    return streak
+
+def weekly_days_streak(goal) -> int:
+    from datetime import date, timedelta
+    from models import Checkin
+
+    streak = 0
+    d = date.today()
+
+    while True:
+        checkin = Checkin.query.filter_by(
+            goal_id=goal.id,
+            date=d
+        ).first()
+
+        # descanso manual → neutro
+        if checkin and checkin.is_rest_day:
+            d -= timedelta(days=1)
+            continue
+
+        # dia não esperado → neutro
+        if not is_expected_day(goal, d):
+            d -= timedelta(days=1)
+            continue
+
+        # dia esperado → precisa de execução válida
+        if checkin and is_valid_checkin(goal, checkin):
+            streak += 1
+            d -= timedelta(days=1)
+            continue
+
+        break
+
+    return streak
+
+
+def daily_streak(goal) -> int:
+    from datetime import date, timedelta
+    from models import Checkin
+
+    streak = 0
+    d = date.today()
+
+    while True:
+        checkin = Checkin.query.filter_by(
+            goal_id=goal.id,
+            date=d
+        ).first()
+
+        if checkin and checkin.is_rest_day:
+            d -= timedelta(days=1)
+            continue
+
+        if checkin and is_valid_checkin(goal, checkin):
+            streak += 1
+            d -= timedelta(days=1)
+        else:
+            break
+
+    return streak
+
+def week_key(d: date):
+    year, week, _ = d.isocalendar()
+    return f"{year}-W{week}"

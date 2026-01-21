@@ -34,16 +34,18 @@ header a {
 }
 
 .goal-card {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 12px;
-    position: relative;
-
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #f7fdf9;
+  border-radius: 14px;
+  padding: 20px 18px;
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.06),
+    0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-
 .streak {
     font-size: 32px;
     font-weight: 700;
@@ -147,8 +149,10 @@ header a {
 }
 
 .goal-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 
+    0 14px 30px rgba(0, 0, 0, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.06);
 }
 
 .goal-card h2 {
@@ -207,4 +211,98 @@ header a {
 
 .btn.secondary {
   background: #555;
+}
+
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.goal-streak {
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ff7a18;
+}
+
+.goal-streak span {
+  font-size: 34px;
+}
+
+.goal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  text-decoration: none;
+}
+
+.goal-title:hover {
+  text-decoration: underline;
+}
+
+.goal-meta {
+  font-size: 14px;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.goal-status {
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.goal-status.done {
+  color: #16a34a;
+}
+
+.goal-status.pending {
+  color: #6b7280;
+}
+
+.goal-status.rest {
+  color: #d97706;
+}
+
+.btn-primary {
+  background: #111827;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #000;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  border: 1px solid #e5e7eb;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
 }
