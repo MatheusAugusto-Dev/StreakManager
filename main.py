@@ -1,4 +1,5 @@
-from cli.menu import show_menu
+from gui.app import StreakManagerApp
 
 if __name__ == "__main__":
-    show_menu()
+    app = StreakManagerApp()
+    app.mainloop()
